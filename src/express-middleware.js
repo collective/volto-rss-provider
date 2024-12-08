@@ -2,6 +2,7 @@ import express from 'express';
 import superagent from 'superagent';
 import RSS from 'rss';
 import { findBlocks, toPublicURL, flattenToAppURL } from '@plone/volto/helpers';
+import config from '@plone/volto/registry';
 
 /**
  * Retrieves the query data (search criteria) used by the listing block of the rss_feed content type
@@ -146,11 +147,9 @@ function truncateText(text, maxLength) {
  * and generates an RSS feed in XML format, which is sent as the response.
  *
  * @function make_rssMiddleware
- * @param {Object} config - The configuration object for the middleware.
- * @param {Object} config.settings - Configuration settings for the application.
  * @return {Function} An Express middleware function for generating the RSS feed.
  */
-function make_rssMiddleware(config) {
+function make_rssMiddleware() {
   const { settings } = config;
   const APISUFIX = settings.legacyTraverse ? '' : '/++api++';
   let apiPath = '';
@@ -203,7 +202,7 @@ function make_rssMiddleware(config) {
       const feed = new RSS(feedOptions);
 
       items.forEach((item) => {
-        let link = item['getURL'];
+        let link = toPublicURL(item['getURL']);
         let enclosure = undefined;
         if (
           item.image_field &&
@@ -271,10 +270,10 @@ function make_rssMiddleware(config) {
   return rssMiddleware;
 }
 
-export default function makeMiddlewares(config) {
+export default function makeMiddlewares() {
   const middleware = express.Router();
   middleware.use(express.urlencoded({ extended: true }));
-  middleware.all('**/rss.xml', make_rssMiddleware(config));
+  middleware.all('**/rss.xml', make_rssMiddleware());
 
   middleware.id = 'rss-middleware';
 
