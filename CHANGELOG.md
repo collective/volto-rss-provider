@@ -8,4 +8,6 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.1 (2024-12-20)
+
 ## 1.0.0 (2024-09-17)
