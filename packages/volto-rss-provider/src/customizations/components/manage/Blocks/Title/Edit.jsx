@@ -10,7 +10,6 @@ import { ReactEditor, Editable, Slate, withReact } from 'slate-react';
 import PropTypes from 'prop-types';
 import { defineMessages, useIntl } from 'react-intl';
 import config from '@plone/volto/registry';
-import { isIMEComposing } from '@plone/volto/helpers/Utils/Utils';
 import { P } from '@plone/volto-slate/constants';
 
 const messages = defineMessages({
@@ -23,6 +22,13 @@ const messages = defineMessages({
     defaultMessage: 'Content title',
   },
 });
+
+// Inlined from Volto 19's helpers/Utils so this shadow also builds on Volto 18,
+// which does not export isIMEComposing.
+function isIMEComposing(event) {
+  const nativeEvent = event?.nativeEvent ?? event;
+  return Boolean(nativeEvent?.isComposing) || nativeEvent?.keyCode === 229;
+}
 
 function usePrevious(value) {
   const ref = useRef();
