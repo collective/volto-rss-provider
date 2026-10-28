@@ -1,0 +1,52 @@
+{
+  "name": "@plone-collective/volto-rss-provider",
+  "version": "1.0.1",
+  "description": "A Volto addon to provide RSS feeds",
+  "main": "src/index.js",
+  "author": "Plone Collective",
+  "homepage": "https://github.com/collective/volto-rss-provider#readme",
+  "license": "MIT",
+  "keywords": [
+    "volto-addon",
+    "volto",
+    "plone",
+    "react"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:collective/volto-rss-provider"
+  },
+  "bugs": {
+    "url": "https://github.com/collective/volto-rss-provider/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "i18n": "rm -rf build/messages && NODE_ENV=production i18n --addon",
+    "dry-release": "release-it --dry-run",
+    "release": "release-it",
+    "release-major-alpha": "release-it major --preRelease=alpha",
+    "release-alpha": "release-it --preRelease=alpha",
+    "release-rc": "release-it --preRelease=rc"
+  },
+  "addons": [],
+  "theme": "",
+  "dependencies": {
+    "rss": "1.2.2",
+    "superagent": "^10.0.0"
+  },
+  "peerDependencies": {
+    "@plone/volto": "^19.0.0",
+    "express": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@plone/registry": "workspace:*",
+    "@plone/scripts": "workspace:*",
+    "@testing-library/react": "^16.2.0",
+    "release-it": "^19.0.5",
+    "vitest": "^3.1.2"
+  }
+}
