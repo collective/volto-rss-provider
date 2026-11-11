@@ -60,7 +60,9 @@ async function getRssFeedData(apiPath, APISUFIX, req, settings) {
     let max_description_length = json.max_description_length;
     let max_title_length = json.max_title_length;
     if (!queryData) {
-      throw new Error('No query data found in listing block');
+      const error = new Error('No query data found in listing block');
+      error.status = 404;
+      throw error;
     }
 
     if (queryData?.sort_order !== null) {
@@ -241,14 +243,15 @@ function make_rssMiddleware() {
       res.setHeader('content-type', 'application/atom+xml');
       res.send(xml);
     } catch (err) {
-      if (err.response && err.response.status === 401) {
+      const status = err.status || err.response?.status;
+      if (status === 401) {
         // Handle unauthorized errors
         res.status(401).json({
           error: 'Unauthorized',
           message:
             'You are not authorized to access the requested RSS feed. Please log in and try again.',
         });
-      } else if (err.response && err.response.status === 404) {
+      } else if (status === 404) {
         // Handle not found errors
         res.status(404).json({
           error: 'Not Found',
