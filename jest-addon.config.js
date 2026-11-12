@@ -1,11 +1,21 @@
 module.exports = {
   testMatch: ['**/src/addons/**/?(*.)+(spec|test).[jt]s?(x)'],
+  globals: {
+    __CLIENT__: false,
+    __SERVER__: true,
+    __DEVELOPMENT__: true,
+  },
   collectCoverageFrom: [
     'src/addons/**/src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
   ],
-  transformIgnorePatterns: ['node_modules/(?!(volto-slate|@plone/volto)/)'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(@plone|@root|@package|volto-slate)/).*/',
+  ],
   moduleNameMapper: {
+    // uuid 14 is ESM only, has no `main` and imports `node:crypto`, which
+    // Jest 26 cannot resolve. Volto's Blocks helpers import it for block ids.
+    '^uuid$': '<rootDir>/src/addons/volto-rss-provider/__mocks__/uuid.js',
     '@plone/volto/cypress': '<rootDir>/node_modules/@plone/volto/cypress',
     '@plone/volto/babel': '<rootDir>/node_modules/@plone/volto/babel',
     '@plone/volto/(.*)$': '<rootDir>/node_modules/@plone/volto/src/$1',
@@ -18,6 +28,7 @@ module.exports = {
   },
   transform: {
     '^.+\\.js(x)?$': 'babel-jest',
+    '^.+\\.ts(x)?$': 'babel-jest',
     '^.+\\.(png)$': 'jest-file',
     '^.+\\.(jpg)$': 'jest-file',
     '^.+\\.(svg)$': './node_modules/@plone/volto/jest-svgsystem-transform.js',
