@@ -1,4 +1,0 @@
-Serve the feed as `application/rss+xml`, not `application/atom+xml`
-
-The generator produces an RSS 2.0 document but the middleware announced it as
-Atom. Readers that switch on the content type got the wrong format.

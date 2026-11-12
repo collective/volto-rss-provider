@@ -1,7 +1,0 @@
-Do not answer 500 when a title or a description is missing
-
-`truncateText()` read `text.length` without checking the value, so a content
-without a title, or an item of the query without a description, crashed the feed
-generation and answered 500 for a URL that is a valid feed. A missing text is now
-an empty string, and a missing `max_title_length` / `max_description_length`
-means "do not truncate".
