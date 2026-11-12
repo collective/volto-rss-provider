@@ -1,8 +1,10 @@
 import express from 'express';
 import superagent from 'superagent';
 import RSS from 'rss';
-import { findBlocks, toPublicURL, flattenToAppURL } from '@plone/volto/helpers';
+import { expandToBackendURL, toPublicURL } from '@plone/volto/helpers/Url/Url';
 import config from '@plone/volto/registry';
+
+import { getFeedListing } from './helpers/getFeedListing';
 
 /**
  * Retrieves the query data (search criteria) used by the listing block of the rss_feed content type
@@ -25,22 +27,15 @@ import config from '@plone/volto/registry';
  * }
  *
  * @function getRssFeedData
- * @param {string} apiPath - The base path for the API requests.
- * @param {string} APISUFIX - The suffix added to the API path depending on the environment.
  * @param {Object} req - The incoming Express request object.
  * @param {Object} settings - Configuration settings for the application.
  * @return {Object} An object containing the query data, language, description, and title of the rss_feed.
- * @throws Will throw an error if no query data is found in the listing block or if the request fails.
+ * @throws Will throw an error if no listing block with a query is found or if the request fails.
  */
-async function getRssFeedData(apiPath, APISUFIX, req, settings) {
+async function getRssFeedData(req, settings) {
   try {
     const request = superagent
-      .get(
-        `${apiPath}${__DEVELOPMENT__ ? '' : APISUFIX}${req.path.replace(
-          '/rss.xml',
-          '',
-        )}`,
-      )
+      .get(expandToBackendURL(req.path.replace(/\/rss\.xml$/, '')))
       .accept('json');
 
     const authToken = req.universalCookies.get('auth_token');
@@ -50,20 +45,20 @@ async function getRssFeedData(apiPath, APISUFIX, req, settings) {
 
     const response = await request;
     const json = JSON.parse(JSON.stringify(response.body));
-    const listingBlock = findBlocks(json.blocks, 'listing');
-    let queryData = json.blocks[listingBlock]?.querystring;
-    let language = json.language.token ?? 'en';
+    const listing = getFeedListing(json);
+    if (!listing) {
+      const error = new Error('No listing block with a query found in content');
+      error.status = 404;
+      throw error;
+    }
+    const queryData = listing.querystring;
+    let language = json.language?.token ?? 'en';
     let description = json.description ?? 'A Volto RSS Feed';
     let title = json.title;
     let subjects = json.subjects;
     let date = json.effective;
     let max_description_length = json.max_description_length;
     let max_title_length = json.max_title_length;
-    if (!queryData) {
-      const error = new Error('No query data found in listing block');
-      error.status = 404;
-      throw error;
-    }
 
     if (queryData?.sort_order !== null) {
       if (typeof queryData.sort_order === 'boolean') {
@@ -106,16 +101,14 @@ async function getRssFeedData(apiPath, APISUFIX, req, settings) {
  *
  * @function fetchListingItems
  * @param {Object} query - The query data used for fetching items.
- * @param {string} apiPath - The base path for the API requests.
- * @param {string} APISUFIX - The suffix added to the API path depending on the environment.
  * @param {string} authToken - The authentication token for authorized requests.
  * @return {Array} An array of items that match the query criteria.
  * @throws Will throw an error if the request fails.
  */
-async function fetchListingItems(query, apiPath, APISUFIX, authToken) {
+async function fetchListingItems(query, authToken) {
   try {
     const request = superagent
-      .post(`${apiPath}${__DEVELOPMENT__ ? '' : APISUFIX}/@querystring-search`)
+      .post(expandToBackendURL('/@querystring-search'))
       .send(query)
       .accept('json');
 
@@ -138,6 +131,8 @@ async function fetchListingItems(query, apiPath, APISUFIX, authToken) {
  * @return {string} The truncated text.
  */
 function truncateText(text, maxLength) {
+  if (!text) return '';
+  if (maxLength == null) return text;
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
@@ -153,21 +148,6 @@ function truncateText(text, maxLength) {
  */
 function make_rssMiddleware() {
   const { settings } = config;
-  const APISUFIX = settings.legacyTraverse ? '' : '/++api++';
-  let apiPath = '';
-  const host = process.env.HOST || 'localhost';
-  const port = process.env.PORT || '3000';
-  const ProdapiPath = `http://${host}:${port}`;
-  if (settings.internalApiPath && __SERVER__) {
-    apiPath = settings.internalApiPath;
-  } else if (__DEVELOPMENT__ && settings.devProxyToApiPath) {
-    apiPath = settings.devProxyToApiPath;
-  } else {
-    apiPath = settings.apiPath;
-  }
-  if (apiPath === '') {
-    apiPath = ProdapiPath;
-  }
 
   async function rssMiddleware(req, res, next) {
     try {
@@ -180,11 +160,9 @@ function make_rssMiddleware() {
         date,
         max_description_length,
         max_title_length,
-      } = await getRssFeedData(apiPath, APISUFIX, req, settings);
+      } = await getRssFeedData(req, settings);
       const items = await fetchListingItems(
         query,
-        apiPath,
-        APISUFIX,
         req.universalCookies.get('auth_token'),
       );
       const feedOptions = {
@@ -240,7 +218,7 @@ function make_rssMiddleware() {
       });
 
       const xml = feed.xml({ indent: true });
-      res.setHeader('content-type', 'application/atom+xml');
+      res.setHeader('content-type', 'application/rss+xml');
       res.send(xml);
     } catch (err) {
       const status = err.status || err.response?.status;
