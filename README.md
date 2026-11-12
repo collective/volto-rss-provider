@@ -59,6 +59,27 @@ http://<website-domain>/<path-to-feed>/rss.xml
 
 This URL will return the RSS feed in XML format.
 
+### Autodiscovery
+
+A page that serves a feed can advertise it with a
+`<link rel="alternate" type="application/rss+xml">` in its `<head>`, so readers and
+browsers can discover it. The add-on emits that link for every content that has a
+listing block in its layout - the same rule the middleware uses to decide whether
+`<path>/rss.xml` is a feed, so a page only advertises a feed that exists - and for
+`rss_feed` content, which used to render the link from its view.
+
+It is opt-in, because it changes the head of every page with a listing block:
+
+```js
+// config.js of the project, or of an add-on applied to it
+config.settings.rssFeed = {
+  ...config.settings.rssFeed,
+  autoDiscovery: true,
+};
+```
+
+The default is `false`: without this setting nothing is added to the head.
+
 ### RSS Feed Generation
 
 This add-on uses the [rss](https://www.npmjs.com/package/rss) npm package to generate the RSS feed.

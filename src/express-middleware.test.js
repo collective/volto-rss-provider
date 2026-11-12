@@ -140,7 +140,7 @@ describe('rss middleware', () => {
     const response = await get('/en/newsroom/rss.xml');
 
     expect(response.status).toBe(200);
-    expect(response.type).toContain('application/atom+xml');
+    expect(response.type).toContain('application/rss+xml');
     expect(response.body).toContain('<![CDATA[Newsroom]]>');
     expect(response.body).toContain('<![CDATA[First item]]>');
     expect(response.body).toContain(

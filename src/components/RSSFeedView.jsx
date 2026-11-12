@@ -5,8 +5,6 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import superagent from 'superagent';
-import { compose } from 'redux';
 
 import {
   Container as SemanticContainer,
@@ -15,30 +13,16 @@ import {
   Grid,
   Label,
 } from 'semantic-ui-react';
-import { defineMessages, injectIntl } from 'react-intl';
 import config from '@plone/volto/registry';
 import { getSchema } from '@plone/volto/actions';
 import { getWidget } from '@plone/volto/helpers/Widget/utils';
 import RenderBlocks from '@plone/volto/components/theme/View/RenderBlocks';
 import useClipboard from '@plone/volto/hooks/clipboard/useClipboard';
 
-import {
-  hasBlocksData,
-  getBaseUrl,
-  addAppURL,
-  findBlocks,
-  Helmet,
-} from '@plone/volto/helpers';
+import { hasBlocksData, getBaseUrl, addAppURL } from '@plone/volto/helpers';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { isEqual } from 'lodash';
-
-const messages = defineMessages({
-  rssFeed: {
-    id: 'rssFeed',
-    defaultMessage: 'RSS Feed',
-  },
-});
 
 /**
  * Component to display the default view.
@@ -53,7 +37,7 @@ const DefaultView = (props) => {
   const { views } = config.widgets;
   const contentSchema = useSelector((state) => state.schema?.schema);
   const [visible, setVisible] = React.useState(false);
-  const [copied, copy, setCopied] = useClipboard(`${addAppURL(path)}/rss.xml`);
+  const [, copy] = useClipboard(`${addAppURL(path)}/rss.xml`);
   const fieldsetsToExclude = [
     'categorization',
     'dates',
@@ -81,12 +65,6 @@ const DefaultView = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const listingBlock = findBlocks(content.blocks, 'listing');
-  const listing = useSelector(
-    (state) =>
-      state.querystringsearch?.subrequests?.[`${content.UID}-${listingBlock}`],
-  );
-
   const Container =
     config.getComponent({ name: 'Container' }).component || SemanticContainer;
 
@@ -94,16 +72,6 @@ const DefaultView = (props) => {
   return contentLoaded ? (
     hasBlocksData(content) ? (
       <Container id="page-document">
-        <Helmet
-          link={[
-            {
-              rel: 'alternate',
-              title: props.intl.formatMessage(messages.rssFeed),
-              href: `${addAppURL(path)}/rss.xml`,
-              type: 'application/rss+xml',
-            },
-          ]}
-        />
         <Segment>
           <Button
             onClick={() => {
@@ -116,7 +84,11 @@ const DefaultView = (props) => {
           {visible && (
             <p>
               Copied! The RSS link is{' '}
-              <a href={`${addAppURL(path)}/rss.xml`} target="_blank">
+              <a
+                href={`${addAppURL(path)}/rss.xml`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {' '}
                 {`${addAppURL(path)}/rss.xml`}
               </a>
@@ -191,4 +163,4 @@ DefaultView.propTypes = {
   }).isRequired,
 };
 
-export default compose(injectIntl)(DefaultView);
+export default DefaultView;
