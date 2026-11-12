@@ -5,7 +5,6 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import superagent from 'superagent';
 import { compose } from 'redux';
 
 import {
@@ -26,7 +25,6 @@ import {
   hasBlocksData,
   getBaseUrl,
   addAppURL,
-  findBlocks,
   Helmet,
 } from '@plone/volto/helpers';
 import { useDispatch, useSelector } from 'react-redux';
@@ -53,7 +51,7 @@ const DefaultView = (props) => {
   const { views } = config.widgets;
   const contentSchema = useSelector((state) => state.schema?.schema);
   const [visible, setVisible] = React.useState(false);
-  const [copied, copy, setCopied] = useClipboard(`${addAppURL(path)}/rss.xml`);
+  const [, copy] = useClipboard(`${addAppURL(path)}/rss.xml`);
   const fieldsetsToExclude = [
     'categorization',
     'dates',
@@ -80,12 +78,6 @@ const DefaultView = (props) => {
       dispatch(getSchema(content['@type'], location.pathname));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const listingBlock = findBlocks(content.blocks, 'listing');
-  const listing = useSelector(
-    (state) =>
-      state.querystringsearch?.subrequests?.[`${content.UID}-${listingBlock}`],
-  );
 
   const Container =
     config.getComponent({ name: 'Container' }).component || SemanticContainer;
@@ -116,7 +108,11 @@ const DefaultView = (props) => {
           {visible && (
             <p>
               Copied! The RSS link is{' '}
-              <a href={`${addAppURL(path)}/rss.xml`} target="_blank">
+              <a
+                href={`${addAppURL(path)}/rss.xml`}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {' '}
                 {`${addAppURL(path)}/rss.xml`}
               </a>
