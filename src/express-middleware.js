@@ -138,6 +138,8 @@ async function fetchListingItems(query, apiPath, APISUFIX, authToken) {
  * @return {string} The truncated text.
  */
 function truncateText(text, maxLength) {
+  if (!text) return '';
+  if (maxLength == null) return text;
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 }
 
