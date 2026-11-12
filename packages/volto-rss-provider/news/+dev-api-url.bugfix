@@ -1,0 +1,11 @@
+Query the API through `++api++` in development too
+
+Both API calls were built as `apiPath + (__DEVELOPMENT__ ? '' : '/++api++') +
+path`. When a development server points at a remote site (`RAZZLE_INTERNAL_API_PATH`,
+for example to check a feed against production data) the request went to the
+frontend origin without the `++api++` prefix, got HTML instead of JSON and every
+`*/rss.xml` answered 500 - including the feeds that work in production.
+
+The URLs are now built with `expandToBackendURL()` from `@plone/volto/helpers`,
+which is the same logic Volto uses for its own API calls: `(internalApiPath ||
+apiPath) + '/++api++' + path`, in every environment.
