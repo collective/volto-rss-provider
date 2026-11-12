@@ -1,0 +1,8 @@
+Answer 404 instead of 500 for `rss.xml` paths whose parent is not a feed
+
+The middleware handles every path ending in `rss.xml`, but it assumed the parent
+is a content object with a listing block. When it is not, `getRssFeedData`
+throws `No query data found in listing block`; that error carries no response,
+so the catch fell through to the 500 branch. Feed readers that guess URLs got
+"Internal Server Error" (and a 500 in the logs) instead of "Not Found":
+`/rss.xml`, `/en/rss.xml`, `/en/analysis/rss.xml`.
