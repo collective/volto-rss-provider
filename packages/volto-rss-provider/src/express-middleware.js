@@ -2,34 +2,9 @@ import express from 'express';
 import superagent from 'superagent';
 import RSS from 'rss';
 import { expandToBackendURL, toPublicURL } from '@plone/volto/helpers/Url/Url';
-import { visitBlocks } from '@plone/volto/helpers/Blocks/Blocks';
 import config from '@plone/volto/registry';
 
-/**
- * Finds the listing block that backs the feed.
- *
- * Blocks are visited in layout order, so a block that is no longer referenced
- * by the layout (an orphan left behind by an edit) is never picked. The order
- * of the keys in the JSON payload is not the authored order, so reading
- * `blocks[key]` directly does not tell which listing comes first.
- *
- * @function getFeedListing
- * @param {Object} content - The content object as returned by the API.
- * @return {Object|undefined} The first listing block that carries a query.
- */
-function getFeedListing(content) {
-  let listing;
-  visitBlocks(content, ([id, block]) => {
-    if (
-      !listing &&
-      block?.['@type'] === 'listing' &&
-      block.querystring?.query?.length
-    ) {
-      listing = block;
-    }
-  });
-  return listing;
-}
+import { getFeedListing } from './helpers/getFeedListing';
 
 /**
  * Retrieves the query data (search criteria) used by the listing block of the rss_feed content type
@@ -243,7 +218,7 @@ function make_rssMiddleware() {
       });
 
       const xml = feed.xml({ indent: true });
-      res.setHeader('content-type', 'application/atom+xml');
+      res.setHeader('content-type', 'application/rss+xml');
       res.send(xml);
     } catch (err) {
       const status = err.status || err.response?.status;

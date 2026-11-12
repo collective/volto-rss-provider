@@ -10,6 +10,26 @@ A Volto addon to provide RSS feeds
 
 <!-- List your awesome features here -->
 
+## RSS autodiscovery
+
+A page that serves a feed can advertise it with a
+`<link rel="alternate" type="application/rss+xml">` in its `<head>`, so readers and
+browsers can discover it. The add-on emits that link for every content that has a
+listing block in its layout - the same rule the middleware uses to decide whether
+`<path>/rss.xml` is a feed, so a page only advertises a feed that exists.
+
+It is opt-in, because it changes the head of every page with a listing block:
+
+```js
+// config.js of the project, or of an add-on applied to it
+config.settings.rssFeed = {
+  ...config.settings.rssFeed,
+  autoDiscovery: true,
+};
+```
+
+The default is `false`: without this setting nothing is added to the head.
+
 ## Installation
 
 To install your project, you must choose the method appropriate to your version of Volto.
