@@ -218,7 +218,7 @@ function make_rssMiddleware() {
       });
 
       const xml = feed.xml({ indent: true });
-      res.setHeader('content-type', 'application/atom+xml');
+      res.setHeader('content-type', 'application/rss+xml');
       res.send(xml);
     } catch (err) {
       const status = err.status || err.response?.status;
