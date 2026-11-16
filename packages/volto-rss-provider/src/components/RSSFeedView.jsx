@@ -5,7 +5,6 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { compose } from 'redux';
 
 import {
   Container as SemanticContainer,
@@ -14,29 +13,16 @@ import {
   Grid,
   Label,
 } from 'semantic-ui-react';
-import { defineMessages, injectIntl } from 'react-intl';
 import config from '@plone/volto/registry';
 import { getSchema } from '@plone/volto/actions';
 import { getWidget } from '@plone/volto/helpers/Widget/utils';
 import RenderBlocks from '@plone/volto/components/theme/View/RenderBlocks';
 import useClipboard from '@plone/volto/hooks/clipboard/useClipboard';
 
-import {
-  hasBlocksData,
-  getBaseUrl,
-  addAppURL,
-  Helmet,
-} from '@plone/volto/helpers';
+import { hasBlocksData, getBaseUrl, addAppURL } from '@plone/volto/helpers';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { isEqual } from 'lodash';
-
-const messages = defineMessages({
-  rssFeed: {
-    id: 'rssFeed',
-    defaultMessage: 'RSS Feed',
-  },
-});
 
 /**
  * Component to display the default view.
@@ -86,16 +72,6 @@ const DefaultView = (props) => {
   return contentLoaded ? (
     hasBlocksData(content) ? (
       <Container id="page-document">
-        <Helmet
-          link={[
-            {
-              rel: 'alternate',
-              title: props.intl.formatMessage(messages.rssFeed),
-              href: `${addAppURL(path)}/rss.xml`,
-              type: 'application/rss+xml',
-            },
-          ]}
-        />
         <Segment>
           <Button
             onClick={() => {
@@ -187,4 +163,4 @@ DefaultView.propTypes = {
   }).isRequired,
 };
 
-export default compose(injectIntl)(DefaultView);
+export default DefaultView;
