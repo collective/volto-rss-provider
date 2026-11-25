@@ -1,0 +1,1 @@
+Inline the `isIMEComposing` helper in the Title block Edit shadow instead of importing it from `@plone/volto/helpers/Utils/Utils`, which only exports it since Volto 19, so the add-on also builds on Volto 18.

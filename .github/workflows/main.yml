@@ -1,0 +1,131 @@
+name: "Main CI"
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+
+  config:
+    name: "Config: Compute values used in workflow"
+    uses: ./.github/workflows/config.yml
+
+  code-analysis:
+    name: "Code analysis checks"
+    uses: plone/meta/.github/workflows/frontend-code.yml@2.x
+    needs:
+        - config
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+
+  unit:
+    name: "Run unit tests"
+    uses: plone/meta/.github/workflows/frontend-unit.yml@2.x
+    needs:
+        - config
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+
+  unit-volto18:
+    name: "Run unit tests on Volto 18"
+    runs-on: ubuntu-latest
+    needs:
+        - config
+    env:
+        VOLTO18_TAG: "18.36.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Pin Volto 18
+        run: |
+          jq --arg tag "$VOLTO18_TAG" '.core.tag = $tag' mrs.developer.json > mrs.developer.json.tmp
+          mv mrs.developer.json.tmp mrs.developer.json
+
+      - name: Setup uv
+        uses: plone/meta/.github/actions/setup_uv@2.x
+
+      - name: Use Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ needs.config.outputs.node-version }}
+
+      - name: Enable corepack
+        run: |
+          npm i -g corepack@latest
+          corepack enable
+          corepack prepare --activate
+
+      - name: Cache for pnpm
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ needs.config.outputs.node-version }}
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Install the Volto 18 workspace
+        run: |
+          pnpm dlx mrs-developer missdev --no-config --fetch-https
+          pnpm install --no-frozen-lockfile
+          make build-deps
+
+      - name: Unit tests
+        run: make ci-test
+
+  i18n:
+    name: "Run i18n checks"
+    uses: plone/meta/.github/workflows/frontend-i18n.yml@2.x
+    needs:
+        - config
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+
+  acceptance:
+    name: "Run acceptance tests"
+    uses: plone/meta/.github/workflows/frontend-acceptance.yml@2.x
+    needs:
+        - config
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+
+  storybook:
+    name: "Storybook"
+    uses: plone/meta/.github/workflows/frontend-storybook.yml@2.x
+    needs:
+        - config
+        - code-analysis
+        - unit
+        - i18n
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+        deploy: ${{ needs.config.outputs.storybook-deploy == 'true' }}
+    permissions:
+      contents: write
+
+  report:
+    name: "Final report"
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    needs:
+      - config
+      - code-analysis
+      - unit
+      - unit-volto18
+      - acceptance
+      - i18n
+      - storybook
+    steps:
+      - name: Write report
+        run: |
+          echo '# Workflow Report' >> $GITHUB_STEP_SUMMARY
+          echo '| Job ID | Conclusion |' >> $GITHUB_STEP_SUMMARY
+          echo '| --- | --- |' >> $GITHUB_STEP_SUMMARY
+          echo '| config | ${{ needs.config.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| code-analysis | ${{ needs.code-analysis.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| unit | ${{ needs.unit.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| unit-volto18 | ${{ needs.unit-volto18.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| acceptance | ${{ needs.acceptance.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| i18n | ${{ needs.i18n.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| storybook | ${{ needs.storybook.result }} |' >> $GITHUB_STEP_SUMMARY

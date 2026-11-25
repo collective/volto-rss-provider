@@ -1,0 +1,1 @@
+Ship the LICENSE file in the published package: npm takes it only from the package directory, so the npm page had no license text even though the package declares MIT.

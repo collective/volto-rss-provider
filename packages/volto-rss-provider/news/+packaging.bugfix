@@ -1,0 +1,1 @@
+Declare `express` and `superagent` as dependencies instead of relying on Volto hoisting them. pnpm's strict `node_modules` layout does not expose transitive dependencies, so the add-on must declare the packages it imports.
