@@ -47,10 +47,24 @@ jobs:
       - name: Setup uv
         uses: plone/meta/.github/actions/setup_uv@2.x
 
-      - name: Setup codebase
-        uses: plone/meta/.github/actions/setup_frontend@2.x
+      - name: Use Node.js
+        uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ needs.config.outputs.node-version }}
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Enable corepack
+        run: |
+          npm i -g corepack@latest
+          corepack enable
+          corepack prepare --activate
+
+      - name: Install the Volto 18 workspace
+        run: |
+          pnpm dlx mrs-developer missdev --no-config --fetch-https
+          pnpm install --no-frozen-lockfile
+          make build-deps
 
       - name: Unit tests
         run: make ci-test
