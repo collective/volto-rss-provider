@@ -25,6 +25,36 @@ jobs:
         - config
     with:
         node-version: ${{ needs.config.outputs.node-version }}
+
+  unit-volto18:
+    name: "Run unit tests on Volto 18"
+    runs-on: ubuntu-latest
+    needs:
+        - config
+    env:
+        VOLTO18_TAG: "18.36.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Pin Volto 18
+        run: |
+          jq --arg tag "$VOLTO18_TAG" '.core.tag = $tag' mrs.developer.json > mrs.developer.json.tmp
+          mv mrs.developer.json.tmp mrs.developer.json
+
+      - name: Setup uv
+        uses: plone/meta/.github/actions/setup_uv@2.x
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_frontend@2.x
+        with:
+          node-version: ${{ needs.config.outputs.node-version }}
+
+      - name: Unit tests
+        run: make ci-test
+
   i18n:
     name: "Run i18n checks"
     uses: plone/meta/.github/workflows/frontend-i18n.yml@2.x
@@ -63,6 +93,7 @@ jobs:
       - config
       - code-analysis
       - unit
+      - unit-volto18
       - acceptance
       - i18n
       - storybook
@@ -75,6 +106,7 @@ jobs:
           echo '| config | ${{ needs.config.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| code-analysis | ${{ needs.code-analysis.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| unit | ${{ needs.unit.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| unit-volto18 | ${{ needs.unit-volto18.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| acceptance | ${{ needs.acceptance.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| i18n | ${{ needs.i18n.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| storybook | ${{ needs.storybook.result }} |' >> $GITHUB_STEP_SUMMARY
