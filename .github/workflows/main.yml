@@ -51,14 +51,19 @@ jobs:
         uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ needs.config.outputs.node-version }}
-          cache: pnpm
-          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Enable corepack
         run: |
           npm i -g corepack@latest
           corepack enable
           corepack prepare --activate
+
+      - name: Cache for pnpm
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ needs.config.outputs.node-version }}
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Install the Volto 18 workspace
         run: |
