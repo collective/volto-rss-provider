@@ -8,6 +8,30 @@
 
 <!-- towncrier release notes start -->
 
+## 2.0.0 (2026-11-25)
+
+
+### Breaking
+
+- Volto 19 support. The add-on is developed and released for Volto 19 and also builds against Volto 18, which the unit tests cover; Volto 17 is no longer supported. The repository is now a pnpm monorepo and the add-on moved to `packages/volto-rss-provider`. Yarn and npm lock files were replaced by pnpm (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packageManager: pnpm@10.20.0`, `preinstall: npx only-allow pnpm`), so the development workflow is now `pnpm install`, `pnpm start`, `pnpm test`, and `pnpm build`. 
+
+
+### Bugfix
+
+- Declare `express` and `superagent` as dependencies instead of relying on Volto hoisting them. pnpm's strict `node_modules` layout does not expose transitive dependencies, so the add-on must declare the packages it imports. 
+- Inline the `isIMEComposing` helper in the Title block Edit shadow instead of importing it from `@plone/volto/helpers/Utils/Utils`, which only exports it since Volto 19, so the add-on also builds on Volto 18. 
+- Ship the LICENSE file in the published package: npm takes it only from the package directory, so the npm page had no license text even though the package declares MIT. 
+
+
+### Internal
+
+- Migrated the tests from Jest to Vitest (`vitest.config.mjs`), moved the Cypress acceptance tests from `acceptance/` to `cypress/` following the Volto 19 add-on layout, added a Storybook configuration, and added GitHub Actions workflows for CI, the towncrier changelog check, and Dependabot. Removed dead imports and unused state from `RSSFeedView` and `express-middleware`, and added `rel="noreferrer"` to the feed link. 
+
+
+### Documentation
+
+- Added the Sphinx documentation scaffold using Plone Sphinx Theme with a Read the Docs configuration, added the towncrier `news/` directory, and backfilled the 1.0.0 and 1.0.1 release notes from the Git history. 
+
 ## 1.0.1 (2024-12-20)
 
 ### Bugfix

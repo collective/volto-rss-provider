@@ -1,6 +1,6 @@
 {
   "name": "@plone-collective/volto-rss-provider-dev",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "A Volto addon to provide RSS feeds",
   "author": "Plone Collective",
   "homepage": "https://github.com/collective/volto-rss-provider",

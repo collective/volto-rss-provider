@@ -1,101 +1,67 @@
-# Release Notes
+# Changelog
 
 <!-- You should *NOT* be adding new change log entries to this file.
      You should create a file in the news directory instead.
      For helpful instructions, please see:
-     https://6.docs.plone.org/contributing/index.html?highlight=towncrier#change-log-entry
+     https://6.docs.plone.org/contributing/index.html#contributing-change-log-label
 -->
 
 <!-- towncrier release notes start -->
 
-## 1.1.0 (2026-11-12)
+## 2.0.0 (2026-11-25)
 
-### Feature
 
-- Advertise the feed of a content with a `<link rel="alternate">` in the head
+### Breaking
 
-  Pages that serve a feed said nothing about it: the `<link rel="alternate"
-  type="application/rss+xml">` existed only on `rss_feed` content, where the view
-  rendered it, so a `Document` with a listing block (a newsroom, a section page, the
-  homepage) served a feed at `<path>/rss.xml` that no reader could discover.
+- Volto 19 support. The add-on is developed and released for Volto 19 and also builds against Volto 18, which the unit tests cover; Volto 17 is no longer supported. The repository is now a pnpm monorepo and the add-on moved to `packages/volto-rss-provider`. Yarn and npm lock files were replaced by pnpm (`pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packageManager: pnpm@10.20.0`, `preinstall: npx only-allow pnpm`), so the development workflow is now `pnpm install`, `pnpm start`, `pnpm test`, and `pnpm build`. 
 
-  An `appExtra` now emits the link for every content with a listing block in its
-  layout. It uses the same rule as the express middleware
-  (`helpers/getFeedListing.js`), so a page advertises a feed only when that feed
-  exists, and the link of a `rss_feed` content is emitted once, from the same place.
-
-  It is opt-in, because it changes the head of every page with a listing block and
-  that is a decision of the site, not of the add-on:
-
-  ```js
-  // config.settings.rssFeed.autoDiscovery, false by default
-  config.settings.rssFeed = { autoDiscovery: true };
-  ``` 
-- Build the feed from the listing block in the layout, not from the first key
-
-  A content object can hold more than one listing block, and `blocks` is returned
-  as an object whose keys are not in the authored order. The middleware read
-  `blocks[findBlocks(...)]` - `findBlocks` returns an **array**, so with two
-  listing blocks the lookup stringified to `"id1,id2"` and found nothing: a content
-  with a usable listing block answered 500 (or 404 since 1.0.2).
-
-  The feed is now built from the first listing block that carries a query, walking
-  the blocks in layout order with `visitBlocks` (`@plone/volto/helpers`). 
 
 ### Bugfix
 
-- Do not answer 500 when a title or a description is missing
+- Declare `express` and `superagent` as dependencies instead of relying on Volto hoisting them. pnpm's strict `node_modules` layout does not expose transitive dependencies, so the add-on must declare the packages it imports. 
+- Inline the `isIMEComposing` helper in the Title block Edit shadow instead of importing it from `@plone/volto/helpers/Utils/Utils`, which only exports it since Volto 19, so the add-on also builds on Volto 18. 
+- Ship the LICENSE file in the published package: npm takes it only from the package directory, so the npm page had no license text even though the package declares MIT. 
 
-  `truncateText()` read `text.length` without checking the value, so a content
-  without a title, or an item of the query without a description, crashed the feed
-  generation and answered 500 for a URL that is a valid feed. A missing text is now
-  an empty string, and a missing `max_title_length` / `max_description_length`
-  means "do not truncate". 
-- Query the API through `++api++` in development too
-
-  Both API calls were built as `apiPath + (__DEVELOPMENT__ ? '' : '/++api++') +
-  path`. When a development server points at a remote site (`RAZZLE_INTERNAL_API_PATH`,
-  as `make staging` does) the request went to the frontend origin without the
-  `++api++` prefix, got HTML instead of JSON and every `*/rss.xml` answered 500 -
-  including the feeds that work in production.
-
-  The URLs are now built with `expandToBackendURL()` from `@plone/volto/helpers`,
-  which is the same logic Volto uses for its own API calls: `(internalApiPath ||
-  apiPath) + '/++api++' + path`, in every environment. `make staging` gets JSON
-  back and the feeds can be checked locally. 
-- Serve the feed as `application/rss+xml`, not `application/atom+xml`
-
-  The generator produces an RSS 2.0 document but the middleware announced it as
-  Atom. Readers that switch on the content type got the wrong format. 
 
 ### Internal
 
-- Add unit tests for the RSS middleware
+- Migrated the tests from Jest to Vitest (`vitest.config.mjs`), moved the Cypress acceptance tests from `acceptance/` to `cypress/` following the Volto 19 add-on layout, added a Storybook configuration, and added GitHub Actions workflows for CI, the towncrier changelog check, and Dependabot. Removed dead imports and unused state from `RSSFeedView` and `express-middleware`, and added `rel="noreferrer"` to the feed link. 
 
-  Fourteen Jest tests against a real Express server, with `superagent` mocked, that
-  pin the status of every branch: feed from the listing block, listing chosen from
-  the layout rather than an orphan, nested container block, no listing block, a
-  listing without a query, an HTML body, a missing parent, 401, 500, missing title
-  and description, and the API path used in development.
 
-  `jest-addon.config.js` now transforms `@plone` packages and TypeScript, defines
-  `__SERVER__`, and maps `uuid` to a stub: Volto 18 depends on `uuid@14`, which is
-  ESM only, ships no `main` and imports `node:crypto`, so Jest 26 cannot load the
-  `Blocks` helpers at all. 
+### Documentation
 
-## 1.0.2 (2026-11-12)
-
-### Bugfix
-
-- Answer 404 instead of 500 for `rss.xml` paths whose parent is not a feed
-
-  The middleware handles every path ending in `rss.xml`, but it assumed the parent
-  is a content object with a listing block. When it is not, `getRssFeedData`
-  throws `No query data found in listing block`; that error carries no response,
-  so the catch fell through to the 500 branch. Feed readers that guess URLs got
-  "Internal Server Error" (and a 500 in the logs) instead of "Not Found":
-  `/rss.xml`, `/en/rss.xml`, `/en/analysis/rss.xml`. 
+- Added the Sphinx documentation scaffold using Plone Sphinx Theme with a Read the Docs configuration, added the towncrier `news/` directory, and backfilled the 1.0.0 and 1.0.1 release notes from the Git history. 
 
 ## 1.0.1 (2024-12-20)
 
+### Bugfix
+
+- Fixed production URLs. Feed item links are now built with the public URL instead of the internal API URL, and the Express middleware reads the settings from the Volto registry instead of receiving the Volto configuration as an argument.
+- Stopped overriding `isMultilingual`, `supportedLanguages`, and `defaultLanguage` in the add-on configuration.
+
 ## 1.0.0 (2024-09-17)
+
+### Feature
+
+- Added an Express middleware that serves an RSS 2.0 feed at `/rss.xml` for `rss_feed` content type pages. The feed is generated from the query of the page's listing block through the `@querystring-search` endpoint, and the `auth_token` cookie is forwarded as a bearer token.
+- Registered `initialBlocks` for the `rss_feed` content type: a required `title` and `listing` block with `disableNewBlocks`.
+- Added the `RSSFeedView` view, which renders the page blocks and a "Copy Feed link" button, and adds a `<link rel="alternate" type="application/rss+xml">` element to the page head.
+- Added the feed channel metadata: title, description, language, site URL, publication date, and the page subjects as channel categories.
+- Added the feed items with title, description, link, UID as GUID, the `effective` date as publication date, the creator names as author, the subjects as categories, and an image enclosure with the preview scale URL, the original image size, and its MIME type.
+- Truncated the item titles and descriptions to `max_title_length` and `max_description_length` when the `rss_feed` item sets them.
+- Returned JSON errors with the HTTP 401, 404, and 500 status codes when the upstream Plone request fails.
+
+### Bugfix
+
+- Fixed `undefined` and `null` errors when the page or the listing block has no query data.
+- Corrected the item image enclosure URL and the production API path.
+- Fixed the layout view name mapping of the `rss_feed` content type.
+
+### Internal
+
+- Converted the middleware from promises to `async`/`await`, simplified and refactored it, and dropped the unused `rss_feed_view` route.
+- Prepared `package.json` for `release-it`.
+
+### Documentation
+
+- Documented the feed specification and the usage of the add-on in the README.
